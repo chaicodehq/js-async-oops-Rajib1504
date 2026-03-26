@@ -77,29 +77,110 @@
 export class DabbaService {
   constructor(serviceName, area) {
     // Your code here
+    this.serviceName = serviceName;
+    this.area = area;
+    this.customers = [];
+    this._nextId = 1;
   }
 
   addCustomer(name, address, mealPreference) {
-    // Your code here
+    const meal = ["veg", "nonveg", "jain"];
+    if (
+      !meal.includes(mealPreference) ||
+      this.customers.find((item) => item.name === name)
+    )
+      return null;
+
+    const newCustomer = {
+      id: this._nextId,
+      name,
+      address,
+      mealPreference,
+      active: true,
+      delivered: false,
+    };
+    this.customers.push(newCustomer);
+    this._nextId++;
+    return newCustomer;
   }
 
   removeCustomer(name) {
-    // Your code here
+    const findUser = this.customers.find((customer) => customer.name === name);
+    if (!findUser || findUser.active === false) return false;
+    findUser.active = false;
+    return true;
   }
 
   createDeliveryBatch() {
-    // Your code here
+    const activeCustomer = this.customers.filter((customer) => customer.active);
+    if (activeCustomer.length === 0) return [];
+    const batch = activeCustomer.map((customer) => {
+      customer.delivered = false;
+      return {
+        customerId: customer.id,
+        name: customer.name,
+        address: customer.address,
+        mealPreference: customer.mealPreference,
+        batchTime: new Date().toISOString(),
+      };
+    });
+    return batch;
   }
-
   markDelivered(customerId) {
-    // Your code here
+    //  *     - Finds active customer by id, sets delivered to true
+    //  *     - Returns true if found and marked
+    //  *     - Returns false if not found or not active
+
+    const findActiveCustomer = this.customers.find(
+      (customer) => customer.id === customerId,
+    );
+    if (!findActiveCustomer || findActiveCustomer.active === false)
+      return false;
+    findActiveCustomer.delivered = true;
+    return true;
   }
 
   getDailyReport() {
     // Your code here
+    const findActiveUser = this.customers.filter(
+      (customer) => customer.active === true,
+    );
+    const totalCustomers = findActiveUser.length;
+
+    const delivered = findActiveUser.filter(
+      (user) => user.delivered === true,
+    ).length;
+    const pending = findActiveUser.filter((u) => u.delivered === false).length;
+    const mealBreakdown = findActiveUser.reduce(
+      (accumulator, current) => {
+        if (current.mealPreference === "veg") {
+          accumulator.veg++;
+        } else if (current.mealPreference === "nonveg") {
+          accumulator.nonveg++;
+        } else {
+          accumulator.jain++;
+        }
+        return accumulator;
+      },
+      { veg: 0, nonveg: 0, jain: 0 },
+    );
+    return {
+      totalCustomers,
+      delivered,
+      pending,
+      mealBreakdown,
+    };
   }
 
   getCustomer(name) {
     // Your code here
+    //      *     - Returns customer object by name (including inactive)
+    //  *     - Returns null if not found
+    const findByName = this.customers.find(customer=>customer.name === name);
+    if (findByName) {
+      return findByName;
+    } else {
+      return null;
+    }
   }
 }
